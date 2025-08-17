@@ -2,11 +2,15 @@ module Jekyll
   module PDF
     module Helper
       def fix_relative_paths
-        if site.baseurl != nil
-          output.gsub!(/(href|src)=(['"])#{Regexp.escape(site.baseurl)}\/([^\/"']([^\"']*|[^"']*))?['"]/, "\\1=\\2file://#{site.dest}/\\3\\2") if output != nil
-        else
-          output.gsub!(/(href|src)=(['"])\/([^\/"']([^\"']*|[^"']*))?['"]/, "\\1=\\2file://#{site.dest}/\\3\\2") if output != nil
+        return if output.nil?
+
+        baseurl = site.baseurl.to_s
+        if !baseurl.empty?
+          output.gsub!(/(href|src)=(['"])#{Regexp.escape(baseurl)}\//, "\\1=\\2file://#{site.dest}/")
         end
+
+        # Rewrite absolute root paths to file:// site.dest
+        output.gsub!(/(href|src)=(['"])\//, "\\1=\\2file://#{site.dest}/")
       end
     end
   end
