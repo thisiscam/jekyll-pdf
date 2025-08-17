@@ -74,7 +74,8 @@ module Jekyll
             @site.config['jekyll_pdf_mode'] = previous_pdf_mode
           end
         end
-        self.output = @page.output
+        # Avoid sharing the same String object as the page HTML to prevent accidental mutation
+        self.output = @page.output.dup
 
         path = File.join(dest_prefix, CGI.unescape(url))
         dest = File.dirname(path)
@@ -88,7 +89,9 @@ module Jekyll
         end
 
         # Debugging - create html version of PDF
-        File.open("#{path}.html", 'w') { |f| f.write(output) } if @settings['debug']
+        if @settings['debug']
+          File.open("#{path}.html", 'w') { |f| f.write(@page.output) }
+        end
         @settings.delete('debug')
         @settings.delete('layout')
 
@@ -99,8 +102,8 @@ module Jekyll
         @settings[:disable_javascript] = true unless @settings.key?(:disable_javascript)
         @settings[:load_error_handling] = 'ignore' unless @settings.key?(:load_error_handling)
         @settings[:disable_external_links] = true unless @settings.key?(:disable_external_links)
-        fix_relative_paths
-        kit = PDFKit.new(output, @settings)
+        html_for_pdf = rewrite_relative_paths(@page.output)
+        kit = PDFKit.new(html_for_pdf, @settings)
         file = kit.to_file(path)
       end
 
