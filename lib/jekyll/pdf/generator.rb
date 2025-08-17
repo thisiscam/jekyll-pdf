@@ -2,11 +2,13 @@ module Jekyll
   module PDF
     class Generator < Jekyll::Generator
       safe true
-      priority :lowest
+      priority :low
 
       def generate(site)
-        [site.pages.clone, site.documents].flatten.each do |item|
-          site.pages << Document.new(site, site.source, item) if item.data['pdf']
+        items = [site.pages, site.documents].flatten
+        items.each do |item|
+          next unless item.data.is_a?(Hash) && item.data.key?('pdf')
+          site.pages << Document.new(site, site.dest, item)
         end
       end
     end

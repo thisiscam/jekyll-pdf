@@ -44,7 +44,13 @@ module Jekyll
       # Recursively merge settings from the page, layout, site config & jekyll-pdf defaults
       def get_config(data)
         settings = data['pdf'].is_a?(Hash) ? data['pdf'] : {}
-        layout = @site.layouts[data['layout']].data.clone unless data['layout'].nil?
+        # Safely resolve the parent layout's front matter
+        if data['layout'].is_a?(String)
+          layout_doc = @site.layouts[data['layout']]
+          layout = layout_doc && layout_doc.data ? layout_doc.data.clone : nil
+        else
+          layout = nil
+        end
 
         # No parent layout found - return settings hash
         return settings if layout.nil?
