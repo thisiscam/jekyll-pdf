@@ -65,7 +65,15 @@ module Jekyll
       # Write the PDF file
       # todo: remove pdfkit dependency
       def write(dest_prefix, _dest_suffix = nil)
-        @page.render(@site.layouts, @site.site_payload) if output.nil?
+        if output.nil?
+          previous_pdf_mode = @site.config['jekyll_pdf_mode']
+          @site.config['jekyll_pdf_mode'] = true
+          begin
+            @page.render(@site.layouts, @site.site_payload)
+          ensure
+            @site.config['jekyll_pdf_mode'] = previous_pdf_mode
+          end
+        end
         self.output = @page.output
 
         path = File.join(dest_prefix, CGI.unescape(url))
