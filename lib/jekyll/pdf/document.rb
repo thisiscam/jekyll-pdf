@@ -102,8 +102,20 @@ module Jekyll
         @settings[:disable_javascript] = true unless @settings.key?(:disable_javascript)
         @settings[:load_error_handling] = 'ignore' unless @settings.key?(:load_error_handling)
         @settings[:disable_external_links] = true unless @settings.key?(:disable_external_links)
+        # Rewrite root-relative links and inject a base href so relative URLs resolve
         html_for_pdf = rewrite_relative_paths(@page.output)
-        kit = PDFKit.new(html_for_pdf, @settings)
+        base_href = "file://#{@site.dest}/"
+        if html_for_pdf =~ /<head[^>]*>/i
+          html_for_pdf.sub!(/<head([^>]*)>/i, "<head\\1><base href=\"#{base_href}\">")
+        else
+          html_for_pdf = "<base href=\"#{base_href}\">" + html_for_pdf
+        end
+
+        # Write a temporary HTML file so wkhtmltopdf resolves relative URLs correctly
+        tmp_html = File.join(dest, File.basename(path) + ".wkhtml.html")
+        File.open(tmp_html, 'w') { |f| f.write(html_for_pdf) }
+
+        kit = PDFKit.new("file://#{tmp_html}", @settings)
         file = kit.to_file(path)
       end
 
