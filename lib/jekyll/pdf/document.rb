@@ -85,21 +85,39 @@ module Jekyll
         @settings.delete('layout')
 
         # Build PDF file
+        # Ensure wkhtmltopdf can read local files
+        @settings[:enable_local_file_access] = true unless @settings.key?(:enable_local_file_access)
+        # Reduce flakiness: disable JS and ignore missing resources
+        @settings[:disable_javascript] = true unless @settings.key?(:disable_javascript)
+        @settings[:load_error_handling] = 'ignore' unless @settings.key?(:load_error_handling)
+        @settings[:disable_external_links] = true unless @settings.key?(:disable_external_links)
         fix_relative_paths
         kit = PDFKit.new(output, @settings)
         file = kit.to_file(path)
       end
 
       def layout
-        # Set page layout to the PDF layout
-        layout = data['pdf_layout'] || @settings['layout']
+        # Candidate from page/front matter or site pdf settings
+        candidate = data['pdf_layout'] || @settings['layout']
 
-        # Check if a PDF version exists for the current layout (e.g. layout_pdf)
-        if layout.nil? && !data['layout'].nil? && File.exist?('_layouts/' + data['layout'] + '_pdf.html')
-          layout = data['layout'] + '_pdf'
+        # Prefer explicit candidate if its file exists
+        if candidate && File.exist?(File.join('_layouts', "#{candidate}.html"))
+          return candidate
         end
 
-        layout || 'pdf'
+        # Try <page_layout>_pdf.html next
+        if data['layout'].is_a?(String)
+          pdf_variant = "#{data['layout']}_pdf"
+          if File.exist?(File.join('_layouts', "#{pdf_variant}.html"))
+            return pdf_variant
+          end
+        end
+
+        # Try generic pdf.html
+        return 'pdf' if File.exist?(File.join('_layouts', 'pdf.html'))
+
+        # Fallback to the page layout or default
+        data['layout'] || 'default'
       end
     end
   end
