@@ -10,7 +10,6 @@ Gem::Specification.new do |spec|
   spec.email         = ["hoijui.quaero@gmail.com"]
 
   spec.files         = `git ls-files`.split($/)
-  spec.has_rdoc      = false
   spec.require_paths = ["lib"]
 
   spec.add_runtime_dependency "pdfkit", "~> 0.8"
